@@ -3,10 +3,16 @@ package com.iamdj.s2t;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
+import android.speech.tts.TextToSpeech;
 import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -16,18 +22,58 @@ import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
+//    variables
+
     private static final int REQUEST_CODE_SPEECH_INPUT = 1000;
     // View from activity
     TextView mtextTv;
     ImageButton mVoiceBtn;
+    Button mSpeakBtn;
+    Button copyButton;
+    EditText mEditTextV;
+    TextToSpeech t1;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        mEditTextV = findViewById(R.id.editText);
+        mSpeakBtn = findViewById(R.id.speakBtn);
         mtextTv = findViewById(R.id.textTv);
         mVoiceBtn = findViewById(R.id.voiceBtn);
+        copyButton = findViewById(R.id.copyBtn);
+
+        t1=new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                if(status == TextToSpeech.SUCCESS) {
+                    t1.setLanguage(Locale.UK);
+                    
+                }
+            }
+        });
+
+        mSpeakBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String toSpeak = mEditTextV.getText().toString();
+                Toast.makeText(getApplicationContext(), toSpeak,Toast.LENGTH_SHORT).show();
+                t1.speak(toSpeak, TextToSpeech.QUEUE_FLUSH, null);
+            }
+        });
+
+        copyButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                ClipData clip = ClipData.newPlainText("Voice text", mtextTv.getText().toString());
+                clipboard.setPrimaryClip(clip);
+
+                Toast.makeText(MainActivity.this, "Text Copied", Toast.LENGTH_SHORT).show();
+            }
+        });
 
         // Button click on show speech to text dialog
         mVoiceBtn.setOnClickListener(new View.OnClickListener() {
@@ -79,5 +125,13 @@ public class MainActivity extends AppCompatActivity {
                 break;
             }
         }
+    }
+
+    public void onPause(){
+        if(t1 !=null){
+            t1.stop();
+            t1.shutdown();
+        }
+        super.onPause();
     }
 }
